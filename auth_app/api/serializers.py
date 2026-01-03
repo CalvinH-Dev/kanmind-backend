@@ -7,6 +7,7 @@ from auth_app.models import UserProfile
 class RegistrationSerializer(serializers.ModelSerializer):
     fullname = serializers.CharField(max_length=150, write_only=True)
     repeated_password = serializers.CharField(max_length=100, write_only=True)
+    email = serializers.EmailField(required=True)
 
     class Meta:
         model = User
