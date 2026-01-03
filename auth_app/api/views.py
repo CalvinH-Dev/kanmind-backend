@@ -19,8 +19,8 @@ class LoginView(ObtainAuthToken):
             data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data["user"]
-        fullname = serializer.validated_data["fullname"]
+        user = serializer.validated_data["user"]  # type: ignore
+        fullname = serializer.validated_data["fullname"]  # type: ignore
         token, created = Token.objects.get_or_create(user=user)
         return Response(
             {

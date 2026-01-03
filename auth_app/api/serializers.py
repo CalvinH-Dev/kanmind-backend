@@ -1,9 +1,8 @@
-from dataclasses import field
-
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from rest_framework.validators import UniqueValidator
 
 from auth_app.models import UserProfile
 
@@ -30,7 +29,15 @@ class LoginSerializer(serializers.Serializer):
 class RegistrationSerializer(serializers.ModelSerializer):
     fullname = serializers.CharField(max_length=150, write_only=True)
     repeated_password = serializers.CharField(max_length=100, write_only=True)
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(
+        required=True,
+        validators=[
+            UniqueValidator(
+                queryset=User.objects.all(),
+                message="Email already exists",
+            )
+        ],
+    )
 
     class Meta:
         model = User
@@ -41,11 +48,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "fullname",
         ]
         extra_kwargs = {"password": {"write_only": True}}
-
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email already exists")
-        return value
 
     def validate(self, attrs):
         if attrs["password"] != attrs["repeated_password"]:
@@ -58,7 +60,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         pw = validated_data.pop("password")
         validated_data.pop("repeated_password")
         fullname = validated_data.pop("fullname")
-        email = validated_data["email"]
+        email = validated_data.pop("email")
 
         user = User(email=email, username=email)
         user.set_password(pw)
