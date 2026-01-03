@@ -39,25 +39,20 @@ class LoginView(ObtainAuthToken):
 class EmailCheckView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
-    # serializer_class = RegistrationSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        users = self.queryset
         email = getValidEmail(request.query_params)
-        user = users.filter(email=email).first()
 
-        if not user:
+        if not (user := self.queryset.filter(email=email).first()):
             return Response(status=404)
 
-        profile = getProfileForUser(user)
+        if not (profile := getProfileForUser(user)):
+            return Response(status=404)
 
-        if profile:
-            return Response(
-                {
-                    "id": user.pk,
-                    "email": user.email,
-                    "fullname": profile.fullname,
-                }
-            )
-
-        return Response(status=404)
+        return Response(
+            {
+                "id": user.pk,
+                "email": user.email,
+                "fullname": profile.fullname,
+            }
+        )
