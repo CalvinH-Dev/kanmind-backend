@@ -86,3 +86,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             "email": instance.email,
             "user_id": instance.id,
         }
+
+
+class EmailQuerySerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
