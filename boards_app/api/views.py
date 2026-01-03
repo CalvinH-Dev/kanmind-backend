@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -13,6 +14,11 @@ class BoardsViewSet(ModelViewSet):
     queryset = Board.objects.all()
 
     def list(self, request, *args, **kwargs):
-        qs = self.get_queryset()
+        boards = (
+            self.get_queryset()
+            .filter(Q(owner=request.user) | Q(members=request.user))
+            .distinct()
+        )
 
-        return super().list(request, *args, **kwargs)
+        serializer = self.get_serializer(boards, many=True)
+        return Response(serializer.data)
