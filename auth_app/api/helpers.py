@@ -18,3 +18,11 @@ def getValidEmail(params) -> str:
     serializer.is_valid(raise_exception=True)
 
     return serializer.validated_data["email"]  # type: ignore
+
+
+class CurrentUserProfileDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        user = serializer_field.context["request"].user
+        return UserProfile.objects.get(user=user)
