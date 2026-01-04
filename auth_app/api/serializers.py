@@ -1,10 +1,47 @@
+from typing import Any, Dict, Iterable, MutableMapping
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework.validators import UniqueValidator
 
+from auth_app.api.dicts import LoginUserDict, RegistrationUserDict
 from auth_app.models import UserProfile
+from core.helpers import split_fullname
+
+
+def clean_up_data(data, keys: Iterable[str]) -> None:
+    for key in keys:
+        data.pop(key, None)
+
+
+def save_user(data: RegistrationUserDict):
+    pw = data["password"]
+    email = data["email"]
+    fullname = data["fullname"]
+
+    clean_up_data(
+        data,
+        ["password", "repeated_password", "email"],
+    )
+
+    user = User(email=email, username=email)
+    user.set_password(pw)
+    user.first_name, user.last_name = split_fullname(fullname)
+    user.save()
+
+    return user
+
+
+def authenticate_user(attrs: LoginUserDict):
+    email = attrs.get("email")
+    password = attrs.get("password")
+
+    user = authenticate(username=email, password=password)
+    if not user:
+        raise serializers.ValidationError("Invalid email or password")
+    return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -13,15 +50,10 @@ class LoginSerializer(serializers.Serializer):
     fullname = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
-        email = attrs.get("email")
-        password = attrs.get("password")
-
-        user = authenticate(username=email, password=password)
-        if not user:
-            raise serializers.ValidationError("Invalid email or password")
+        user = authenticate_user(attrs)
         attrs["user"] = user
 
-        profile = getattr(user, "userprofile", None)
+        profile = user.userprofile  # type: ignore
         attrs["fullname"] = profile.fullname if profile else ""
         return attrs
 
@@ -57,22 +89,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        pw = validated_data.pop("password")
-        validated_data.pop("repeated_password")
+        user = save_user(validated_data)
+
         fullname = validated_data.pop("fullname")
-        email = validated_data.pop("email")
-
-        user = User(email=email, username=email)
-        user.set_password(pw)
-        user.save()
-
         UserProfile.objects.create(user=user, fullname=fullname)
-
-        first_name, *last_parts = fullname.strip().split()
-        last_name = " ".join(last_parts) if last_parts else ""
-        user.first_name = first_name
-        user.last_name = last_name
-        user.save()
 
         return user
 

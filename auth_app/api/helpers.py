@@ -1,3 +1,5 @@
+from typing import Dict
+
 from django.contrib.auth.models import User
 
 from auth_app.api.serializers import EmailQuerySerializer
