@@ -7,6 +7,7 @@ from boards_app.api.permission import IsBoardMemberOrOwner
 from boards_app.api.serializers import (
     BoardDetailSerializer,
     BoardListSerializer,
+    UpdateBoardSerializer,
 )
 from boards_app.models import Board
 
@@ -18,6 +19,8 @@ class BoardsViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list" or self.action == "create":
             return BoardListSerializer
+        if self.action == "partial_update":
+            return UpdateBoardSerializer
         return BoardDetailSerializer
 
     def get_queryset(self) -> QuerySet[Board]:

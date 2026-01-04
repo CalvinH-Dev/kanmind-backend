@@ -38,11 +38,20 @@ class BoardDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class UpdateBoardSerializer(serializers.ModelSerializer):
+    owner_data = UserProfileSerializer(source="owner", read_only=True)
+    members_data = UserProfileSerializer(
+        source="members", many=True, read_only=True
+    )
+
+    class Meta:
+        model = Board
+        fields = ["id", "title", "members", "owner_data", "members_data"]
+        extra_kwargs = {"members": {"write_only": True}}
+
+
 class BoardListSerializer(serializers.ModelSerializer):
     owner = serializers.HiddenField(default=CurrentUserProfileDefault())
-    members = serializers.PrimaryKeyRelatedField(
-        many=True, write_only=True, queryset=UserProfile.objects.all()
-    )
     member_count = serializers.SerializerMethodField()
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
 
@@ -56,6 +65,7 @@ class BoardListSerializer(serializers.ModelSerializer):
             "member_count",
             "owner_id",
         ]
+        extra_kwargs = {"members": {"write_only": True}}
 
     def get_member_count(self, obj):
         return obj.members.count()
