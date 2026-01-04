@@ -7,7 +7,6 @@ from rest_framework.response import Response
 
 from auth_app.api.helpers import getProfileForUser, getValidEmail
 from auth_app.api.serializers import LoginSerializer, RegistrationSerializer
-from auth_app.models import UserProfile
 
 
 class RegistrationView(generics.CreateAPIView):

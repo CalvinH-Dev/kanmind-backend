@@ -1,4 +1,4 @@
-from typing import Type, TypedDict
+from typing import TypedDict
 
 
 class RegistrationUserDict(TypedDict):
