@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from auth_app.models import UserProfile
-from boards_app.api.permission import IsBoardMemberOrOwner
+from boards_app.api.permission import IsBoardMemberOrOwner, IsOwner
 from boards_app.api.serializers import (
     BoardDetailSerializer,
     BoardListSerializer,
@@ -15,6 +15,11 @@ from boards_app.models import Board
 class BoardsViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated & IsBoardMemberOrOwner]
     queryset = Board.objects.all()
+
+    def get_permissions(self):
+        if self.action == "destroy":
+            return [IsAuthenticated(), IsOwner()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == "list" or self.action == "create":
