@@ -33,7 +33,6 @@ class BoardDetailSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "members",
-            "owner",
             "owner_id",
         ]
 
