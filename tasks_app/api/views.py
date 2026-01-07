@@ -26,6 +26,16 @@ class AssignedToMeView(ListAPIView):
         return profile.tasks_assigned.all()
 
 
+class ReviewingView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TaskListSerializer
+
+    def get_queryset(self) -> QuerySet[Task]:
+        user = self.request.user
+        profile = UserProfile.objects.all().filter(user=user).first()
+        return profile.tasks_reviewing.all()
+
+
 class TaskViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Task.objects.all()
