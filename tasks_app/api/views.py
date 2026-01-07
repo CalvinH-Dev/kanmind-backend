@@ -1,8 +1,8 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
-from boards_app.api.permission import IsBoardMemberOrOwner, IsBoardOwner
-from tasks_app.api.permissions import IsTaskCreator
+from boards_app.api.permission import IsBoardMemberOrOwner
+from tasks_app.api.permissions import IsTaskCreatorOrBoardOwner
 from tasks_app.api.serializers import (
     TaskBaseSerializer,
     TaskCreateSerializer,
@@ -19,7 +19,7 @@ class TaskViewSet(ModelViewSet):
         if self.action == "partial_update":
             return [IsAuthenticated(), IsBoardMemberOrOwner()]
         elif self.action == "destroy":
-            return [IsAuthenticated(), IsTaskCreator(), IsBoardOwner()]
+            return [IsAuthenticated(), IsTaskCreatorOrBoardOwner()]
 
         return super().get_permissions()
 

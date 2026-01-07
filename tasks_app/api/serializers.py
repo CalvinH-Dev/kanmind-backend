@@ -54,10 +54,6 @@ class TaskCreateSerializer(TaskBaseSerializer):
         board_id = validated_data.get("board").id
         board = Board.objects.all().get(id=board_id)
 
-        print(board_id)
-        print(board.owner_id)
-        print(creator_id)
-
         not_board_owner_or_member = (
             creator_id != board.owner_id
             and not board.members.filter(id=creator_id).exists()
