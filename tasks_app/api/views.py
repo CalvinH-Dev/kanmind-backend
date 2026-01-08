@@ -1,13 +1,22 @@
+from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import (
+    DestroyAPIView,
+    ListAPIView,
+    ListCreateAPIView,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from auth_app.models import UserProfile
 from boards_app.api.permission import IsBoardMemberOrOwner
-from tasks_app.api.permissions import IsTaskCreatorOrBoardOwner
+from tasks_app.api.helpers import has_board_access
+from tasks_app.api.permissions import (
+    IsCommentCreator,
+    IsTaskCreatorOrBoardOwner,
+)
 from tasks_app.api.serializers import (
     CommentListAndCreateSerializer,
     TaskBaseSerializer,
@@ -64,28 +73,23 @@ class TaskViewSet(ModelViewSet):
         return TaskBaseSerializer
 
 
-class CommentsViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+class CommentsListCreateAPI(ListCreateAPIView):
+    permission_classes = [IsAuthenticated, IsBoardMemberOrOwner]
     serializer_class = CommentListAndCreateSerializer
 
     def get_queryset(self):
         task_id = self.kwargs["task_id"]
+        get_object_or_404(Task.objects.all(), pk=task_id)
         comments = Comment.objects.all().filter(task_id=task_id)
         return comments
 
-    # def get_serializer_class(self):
-    #     if self.action == "create":
-    #         return CommentCreateSerializer
-    #     return CommentDetailSerializer
-
     def perform_create(self, serializer):
         task_id = self.kwargs["task_id"]
-        get_object_or_404(Task.objects.all(), pk=task_id)
         serializer.save(task_id=task_id)
 
 
-class CommentViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+class CommentDeleteAPI(DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsCommentCreator]
 
     def get_object(self):
         task_id = self.kwargs["task_id"]
@@ -93,5 +97,6 @@ class CommentViewSet(ModelViewSet):
 
         task = get_object_or_404(Task.objects.all(), pk=task_id)
         comment = get_object_or_404(task.comments, pk=pk)
+        self.check_object_permissions(self.request, comment)
 
         return comment

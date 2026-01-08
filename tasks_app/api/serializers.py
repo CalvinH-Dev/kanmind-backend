@@ -1,9 +1,12 @@
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from auth_app.api.helpers import CurrentUserProfileDefault
 from auth_app.models import UserProfile
 from boards_app.api.serializers import UserProfileSerializer
-from tasks_app.api.helpers import verify_board_membership
+from boards_app.models import Board
+from tasks_app.api.helpers import has_board_access, verify_board_membership
 from tasks_app.models import Comment, Task
 
 
@@ -34,8 +37,6 @@ class TaskBaseSerializer(serializers.ModelSerializer):
 
 
 class TaskUpdateSerializer(TaskBaseSerializer):
-    pass
-
     def update(self, instance, validated_data):
         board = instance.board
         creator_id = instance.creator_id
@@ -85,4 +86,5 @@ class CommentListAndCreateSerializer(CommentDetailSerializer):
         validated_data["author"] = UserProfile.objects.all().get(
             id=self.context["request"].user.id
         )
+
         return super().create(validated_data)
