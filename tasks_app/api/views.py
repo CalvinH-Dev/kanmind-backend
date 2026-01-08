@@ -1,4 +1,5 @@
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -8,8 +9,7 @@ from auth_app.models import UserProfile
 from boards_app.api.permission import IsBoardMemberOrOwner
 from tasks_app.api.permissions import IsTaskCreatorOrBoardOwner
 from tasks_app.api.serializers import (
-    CommentCreateSerializer,
-    CommentDetailSerializer,
+    CommentListAndCreateSerializer,
     TaskBaseSerializer,
     TaskCreateSerializer,
     TaskListSerializer,
@@ -66,25 +66,32 @@ class TaskViewSet(ModelViewSet):
 
 class CommentsViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
+    serializer_class = CommentListAndCreateSerializer
 
     def get_queryset(self):
         task_id = self.kwargs["task_id"]
         comments = Comment.objects.all().filter(task_id=task_id)
         return comments
 
-    def get_serializer_class(self):
-        if self.action == "create":
-            return CommentCreateSerializer
-        return CommentDetailSerializer
+    # def get_serializer_class(self):
+    #     if self.action == "create":
+    #         return CommentCreateSerializer
+    #     return CommentDetailSerializer
 
     def perform_create(self, serializer):
         task_id = self.kwargs["task_id"]
+        get_object_or_404(Task.objects.all(), pk=task_id)
         serializer.save(task_id=task_id)
 
 
 class CommentViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
-    queryset = Comment.objects.all()
 
-    def retrieve(self, request, *args, **kwargs):
-        raise NotFound()
+    def get_object(self):
+        task_id = self.kwargs["task_id"]
+        pk = self.kwargs["pk"]
+
+        task = get_object_or_404(Task.objects.all(), pk=task_id)
+        comment = get_object_or_404(task.comments, pk=pk)
+
+        return comment

@@ -70,17 +70,16 @@ class TaskCreateSerializer(TaskListSerializer):
 
 
 class CommentDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = ["id", "created_at", "author", "content"]
-
-
-class CommentCreateSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source="author.fullname", read_only=True)
 
     class Meta:
         model = Comment
         fields = ["id", "created_at", "author", "content"]
+
+
+class CommentListAndCreateSerializer(CommentDetailSerializer):
+    class Meta(CommentDetailSerializer.Meta):
+        fields = CommentDetailSerializer.Meta.fields + []
 
     def create(self, validated_data):
         validated_data["author"] = UserProfile.objects.all().get(

@@ -4,6 +4,7 @@ from rest_framework import routers
 from tasks_app.api.views import (
     AssignedToMeView,
     CommentsViewSet,
+    CommentViewSet,
     ReviewingView,
     TaskViewSet,
 )
@@ -23,18 +24,15 @@ comment_urls = [
         CommentsViewSet.as_view({"get": "list", "post": "create"}),
         name="task-comments",
     ),
-    # path(
-    #     "<int:task_id>/comments/<int:pk>/",
-    #     CommentViewSet.as_view(
-    #         {
-    #             "get": "retrieve",
-    #             "put": "update",
-    #             "patch": "partial_update",
-    #             "delete": "destroy",
-    #         }
-    #     ),
-    #     name="task-comment-detail",
-    # ),
+    path(
+        "<int:task_id>/comments/<int:pk>/",
+        CommentViewSet.as_view(
+            {
+                "delete": "destroy",
+            }
+        ),
+        name="task-comment-detail",
+    ),
 ]
 
 urlpatterns += router.urls
