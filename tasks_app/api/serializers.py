@@ -1,16 +1,29 @@
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 
 from auth_app.api.helpers import CurrentUserProfileDefault
 from boards_app.api.serializers import UserProfileSerializer
-from tasks_app.api.helpers import check_members_of_board
+from tasks_app.api.helpers import has_board_access
 from tasks_app.models import Task
 
 
-def check_users_with_board(board, creator_id, validated_data):
+def verify_board_membership(board, creator_id, validated_data):
     assignee_id = validated_data.get("assignee_id", None)
     reviewer_id = validated_data.get("reviewer_id", None)
 
-    check_members_of_board(board, creator_id, assignee_id, reviewer_id)
+    if not has_board_access(board, creator_id):
+        raise PermissionDenied("You cannot create a task for this board.")
+
+    if assignee_id:
+        if not has_board_access(board, assignee_id):
+            raise serializers.ValidationError(
+                "Assignee must be a member of the board."
+            )
+    if reviewer_id:
+        if not has_board_access(board, reviewer_id):
+            raise serializers.ValidationError(
+                "Reviewer must be a member of the board."
+            )
 
 
 class TaskBaseSerializer(serializers.ModelSerializer):
@@ -45,7 +58,7 @@ class TaskUpdateSerializer(TaskBaseSerializer):
     def update(self, instance, validated_data):
         board = instance.board
         creator_id = instance.creator_id
-        check_users_with_board(board, creator_id, validated_data)
+        verify_board_membership(board, creator_id, validated_data)
         return super().update(instance, validated_data)
 
 
@@ -70,6 +83,6 @@ class TaskCreateSerializer(TaskListSerializer):
     def create(self, validated_data):
         board = validated_data.get("board")
         creator_id = validated_data.get("creator").id
-        check_users_with_board(board, creator_id, validated_data)
+        verify_board_membership(board, creator_id, validated_data)
 
         return super().create(validated_data)
