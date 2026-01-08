@@ -1,29 +1,10 @@
 from rest_framework import serializers
-from rest_framework.exceptions import PermissionDenied
 
 from auth_app.api.helpers import CurrentUserProfileDefault
+from auth_app.models import UserProfile
 from boards_app.api.serializers import UserProfileSerializer
-from tasks_app.api.helpers import has_board_access
-from tasks_app.models import Task
-
-
-def verify_board_membership(board, creator_id, validated_data):
-    assignee_id = validated_data.get("assignee_id", None)
-    reviewer_id = validated_data.get("reviewer_id", None)
-
-    if not has_board_access(board, creator_id):
-        raise PermissionDenied("You cannot create a task for this board.")
-
-    if assignee_id:
-        if not has_board_access(board, assignee_id):
-            raise serializers.ValidationError(
-                "Assignee must be a member of the board."
-            )
-    if reviewer_id:
-        if not has_board_access(board, reviewer_id):
-            raise serializers.ValidationError(
-                "Reviewer must be a member of the board."
-            )
+from tasks_app.api.helpers import verify_board_membership
+from tasks_app.models import Comment, Task
 
 
 class TaskBaseSerializer(serializers.ModelSerializer):
@@ -85,4 +66,24 @@ class TaskCreateSerializer(TaskListSerializer):
         creator_id = validated_data.get("creator").id
         verify_board_membership(board, creator_id, validated_data)
 
+        return super().create(validated_data)
+
+
+class CommentDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["id", "created_at", "author", "content"]
+
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source="author.fullname", read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ["id", "created_at", "author", "content"]
+
+    def create(self, validated_data):
+        validated_data["author"] = UserProfile.objects.all().get(
+            id=self.context["request"].user.id
+        )
         return super().create(validated_data)
