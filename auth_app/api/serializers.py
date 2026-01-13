@@ -12,11 +12,28 @@ from core.helpers import split_fullname
 
 
 def clean_up_data(data, keys: Iterable[str]) -> None:
+    """
+    Remove specified keys from a dictionary in place.
+
+    Iterates over the provided list of keys and removes each one
+    from the data dictionary if it exists. This helps prepare
+    the dictionary for further processing where certain keys
+    are no longer needed.
+    """
     for key in keys:
         data.pop(key, None)
 
 
 def save_user(data: RegistrationUserDict):
+    """
+    Create and save a new User instance from registration data.
+
+    Extracts the password, email, and full name from the
+    registration dictionary. Removes redundant items from the
+    dictionary, constructs the User object, and sets its password.
+    Also splits the full name into first and last name fields
+    before saving and returns the created User.
+    """
     pw = data["password"]
     email = data["email"]
     fullname = data["fullname"]
@@ -35,6 +52,14 @@ def save_user(data: RegistrationUserDict):
 
 
 def authenticate_user(attrs: LoginUserDict):
+    """
+    Authenticate a user based on provided login credentials.
+
+    Given a dictionary with email and password, attempts to
+    authenticate the user using Django's authentication system.
+    Raises a validation error when credentials are invalid,
+    otherwise returns the authenticated User instance.
+    """
     email = attrs.get("email")
     password = attrs.get("password")
 
@@ -45,6 +70,14 @@ def authenticate_user(attrs: LoginUserDict):
 
 
 class LoginSerializer(serializers.Serializer):
+    """
+    Serializer for handling user login input and validation.
+
+    Defines the expected fields for login, including email and
+    password. After validation, attaches the authenticated user
+    and their full name to the validated data.
+    """
+
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
     fullname = serializers.CharField(read_only=True)
@@ -59,6 +92,15 @@ class LoginSerializer(serializers.Serializer):
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for registering a new user.
+
+    Handles incoming registration data, enforces email
+    uniqueness, matches password fields, and creates the User
+    along with a related UserProfile. Returns a token and
+    profile information on output.
+    """
+
     fullname = serializers.CharField(max_length=150, write_only=True)
     repeated_password = serializers.CharField(max_length=100, write_only=True)
     email = serializers.EmailField(
@@ -97,6 +139,12 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return user
 
     def to_representation(self, instance):
+        """
+        Customize serialization output after user creation.
+
+        Includes an authentication token, the user's full name,
+        email, and user ID in the returned data.
+        """
         profile = getattr(instance, "userprofile", None)
         fullname = profile.fullname if profile else ""
         token = Token.objects.create(user=instance)
@@ -109,4 +157,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class EmailQuerySerializer(serializers.Serializer):
+    """
+    Serializer for validating email query parameters.
+
+    Ensures that the email field is present and conforms to a
+    valid email format.
+    """
+
     email = serializers.EmailField(required=True)
