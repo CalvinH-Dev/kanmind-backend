@@ -44,7 +44,7 @@ class Task(models.Model):
     due_date = models.DateField()
 
     def __str__(self):
-        return self.title
+        return f"Board: {self.board.title} - Task: {self.title}"
 
 
 class Comment(models.Model):
@@ -54,3 +54,10 @@ class Comment(models.Model):
     author = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     content = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f"Author: {self.author} - "
+            f"Comment: {self.content} - "
+            f"Created at: {self.created_at.strftime('%a, %d.%m.%Y %H:%M')}"
+        )

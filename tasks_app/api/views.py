@@ -1,4 +1,3 @@
-from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
@@ -12,7 +11,6 @@ from rest_framework.viewsets import ModelViewSet
 
 from auth_app.models import UserProfile
 from boards_app.api.permission import IsBoardMemberOrOwner
-from tasks_app.api.helpers import has_board_access
 from tasks_app.api.permissions import (
     IsCommentCreator,
     IsTaskCreatorOrBoardOwner,
