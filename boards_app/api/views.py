@@ -13,6 +13,14 @@ from boards_app.models import Board
 
 
 class BoardsViewSet(ModelViewSet):
+    """
+    ViewSet for Board objects that handles permissions, queryset filtering,
+    and serializer selection based on the action being performed.
+
+    Uses custom permissions to ensure that only board members or the board
+    owner have access, and only the board owner can delete.
+    """
+
     permission_classes = [IsAuthenticated & IsBoardMemberOrOwner]
     queryset = Board.objects.all()
 
@@ -22,7 +30,7 @@ class BoardsViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.action == "list" or self.action == "create":
+        if self.action in ("list", "create"):
             return BoardListSerializer
         if self.action == "partial_update":
             return UpdateBoardSerializer
@@ -31,7 +39,8 @@ class BoardsViewSet(ModelViewSet):
     def get_queryset(self) -> QuerySet[Board]:
         if self.action == "list":
             user = self.request.user
-            profile = UserProfile.objects.all().filter(user=user).first()
+            profile = UserProfile.objects.filter(user=user).first()
+            # Only return boards where the profile is owner or member
             return Board.objects.filter(
                 Q(owner=profile) | Q(members=profile)
             ).distinct()

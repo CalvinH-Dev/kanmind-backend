@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from auth_app.api.helpers import CurrentUserProfileDefault
@@ -6,13 +5,14 @@ from auth_app.models import UserProfile
 from boards_app.models import Board
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["email"]
-
-
 class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the UserProfile model.
+
+    Includes the profile ID, full name, and uses a custom method
+    field to fetch the linked user's email.
+    """
+
     email = serializers.SerializerMethodField()
 
     class Meta:
@@ -24,6 +24,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Board details.
+
+    Includes nested UserProfileSerializer representations for
+    members and the owner's ID. Useful for detail views.
+    """
+
     members = UserProfileSerializer(many=True, read_only=True)
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
 
@@ -38,6 +45,13 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
 
 class UpdateBoardSerializer(serializers.ModelSerializer):
+    """
+    Serializer used for updating Board instances.
+
+    Shows read-only nested data for the owner and members, while
+    allowing the members field to be updated via its IDs.
+    """
+
     owner_data = UserProfileSerializer(source="owner", read_only=True)
     members_data = UserProfileSerializer(
         source="members", many=True, read_only=True
@@ -50,6 +64,14 @@ class UpdateBoardSerializer(serializers.ModelSerializer):
 
 
 class BoardListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing boards.
+
+    Automatically sets the current authenticated user's profile
+    as the owner using a hidden default. Also provides a count of
+    members via a custom method field.
+    """
+
     owner = serializers.HiddenField(default=CurrentUserProfileDefault())
     member_count = serializers.SerializerMethodField()
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
