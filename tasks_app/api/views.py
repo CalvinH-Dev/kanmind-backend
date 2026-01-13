@@ -26,26 +26,51 @@ from tasks_app.models import Comment, Task
 
 
 class AssignedToMeView(ListAPIView):
+    """
+    View listing tasks where the authenticated user is the assignee.
+
+    This view is restricted to authenticated users. It derives the
+    authenticated user's profile and returns all tasks assigned to them.
+    ListAPIView provides the `get` method for listing items.
+    """
+
     permission_classes = [IsAuthenticated]
     serializer_class = TaskListSerializer
 
     def get_queryset(self) -> QuerySet[Task]:
         user = self.request.user
-        profile = UserProfile.objects.all().filter(user=user).first()
+        profile = UserProfile.objects.filter(user=user).first()
         return profile.tasks_assigned.all()
 
 
 class ReviewingView(ListAPIView):
+    """
+    View listing tasks where the authenticated user is the reviewer.
+
+    Similar to AssignedToMeView, but returns tasks the user is reviewing.
+    """
+
     permission_classes = [IsAuthenticated]
     serializer_class = TaskListSerializer
 
     def get_queryset(self) -> QuerySet[Task]:
         user = self.request.user
-        profile = UserProfile.objects.all().filter(user=user).first()
+        profile = UserProfile.objects.filter(user=user).first()
         return profile.tasks_reviewing.all()
 
 
 class TaskViewSet(ModelViewSet):
+    """
+    ViewSet for handling Task operations.
+
+    This ViewSet uses authenticated permissions and delegates different
+    permissions per action. It prevents direct listing and retrieving
+    with NotFound for REST constraints, and chooses serializer classes
+    based on the action. ModelViewSet provides implementations for all
+    standard actions (`list`, `retrieve`, `create`, etc.) when not
+    overridden.
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = Task.objects.all()
 
@@ -64,7 +89,7 @@ class TaskViewSet(ModelViewSet):
         return super().get_permissions()
 
     def get_serializer_class(self):
-        if self.action == "list" or self.action == "create":
+        if self.action in ("list", "create"):
             return TaskCreateSerializer
         if self.action == "partial_update":
             return TaskUpdateSerializer
@@ -72,13 +97,21 @@ class TaskViewSet(ModelViewSet):
 
 
 class CommentsListCreateAPI(ListCreateAPIView):
+    """
+    Generic view for listing and creating comments on a task.
+
+    Uses ListCreateAPIView to handle `GET` and `POST` for comments.
+    Filters queryset by the task ID from URL, verifying task existence
+    with get_object_or_404.
+    """
+
     permission_classes = [IsAuthenticated, IsBoardMemberOrOwner]
     serializer_class = CommentListAndCreateSerializer
 
     def get_queryset(self):
         task_id = self.kwargs["task_id"]
         get_object_or_404(Task.objects.all(), pk=task_id)
-        comments = Comment.objects.all().filter(task_id=task_id)
+        comments = Comment.objects.filter(task_id=task_id)
         return comments
 
     def perform_create(self, serializer):
@@ -87,6 +120,14 @@ class CommentsListCreateAPI(ListCreateAPIView):
 
 
 class CommentDeleteAPI(DestroyAPIView):
+    """
+    Generic view for deleting a comment.
+
+    Uses DestroyAPIView to handle `DELETE` requests. It ensures the
+    comment belongs to the referenced task, and checks object permissions
+    before deletion.
+    """
+
     permission_classes = [IsAuthenticated, IsCommentCreator]
 
     def get_object(self):
