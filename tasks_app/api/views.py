@@ -11,6 +11,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from auth_app.models import UserProfile
 from boards_app.api.permission import IsBoardMemberOrOwner
+from boards_app.models import Board
 from tasks_app.api.permissions import (
     IsCommentCreator,
     IsTaskCreatorOrBoardOwner,
@@ -79,6 +80,11 @@ class TaskViewSet(ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         raise NotFound()
+
+    def create(self, request, *args, **kwargs):
+        board_id = request.data["board"]
+        get_object_or_404(Board.objects.all(), pk=board_id)
+        return super().create(request, *args, **kwargs)
 
     def get_permissions(self):
         if self.action == "partial_update":
