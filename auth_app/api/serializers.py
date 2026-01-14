@@ -69,6 +69,24 @@ def authenticate_user(attrs: LoginUserDict):
     return user
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the UserProfile model.
+
+    Includes the profile ID, full name, and uses a custom method
+    field to fetch the linked user's email.
+    """
+
+    email = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = ["id", "email", "fullname"]
+
+    def get_email(self, obj):
+        return obj.user.email
+
+
 class LoginSerializer(serializers.Serializer):
     """
     Serializer for handling user login input and validation.

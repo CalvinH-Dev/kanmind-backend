@@ -46,7 +46,9 @@ class Task(models.Model):
         UserProfile,
         on_delete=models.CASCADE,
     )
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
+    board = models.ForeignKey(
+        Board, on_delete=models.CASCADE, related_name="tickets"
+    )
     title = models.CharField(max_length=254)
     description = models.TextField(blank=True)
     assignee = models.ForeignKey(

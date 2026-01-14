@@ -1,26 +1,12 @@
 from rest_framework import serializers
 
 from auth_app.api.helpers import CurrentUserProfileDefault
-from auth_app.models import UserProfile
+from auth_app.api.serializers import UserProfileSerializer
 from boards_app.models import Board
-
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the UserProfile model.
-
-    Includes the profile ID, full name, and uses a custom method
-    field to fetch the linked user's email.
-    """
-
-    email = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserProfile
-        fields = ["id", "email", "fullname"]
-
-    def get_email(self, obj):
-        return obj.user.email
+from tasks_app.api.serializers import (
+    BoardTaskListSerializer,
+)
+from tasks_app.models import Task
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
@@ -32,16 +18,14 @@ class BoardDetailSerializer(serializers.ModelSerializer):
     """
 
     members = UserProfileSerializer(many=True, read_only=True)
+    tasks = BoardTaskListSerializer(
+        source="tickets", many=True, read_only=True
+    )
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
 
     class Meta:
         model = Board
-        fields = [
-            "id",
-            "title",
-            "members",
-            "owner_id",
-        ]
+        fields = ["id", "title", "members", "owner_id", "tasks"]
 
 
 class UpdateBoardSerializer(serializers.ModelSerializer):
@@ -75,6 +59,9 @@ class BoardListSerializer(serializers.ModelSerializer):
     owner = serializers.HiddenField(default=CurrentUserProfileDefault())
     member_count = serializers.SerializerMethodField()
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
+    ticket_count = serializers.SerializerMethodField()
+    tasks_to_do_count = serializers.SerializerMethodField()
+    tasks_high_prio_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Board
@@ -85,8 +72,22 @@ class BoardListSerializer(serializers.ModelSerializer):
             "owner",
             "member_count",
             "owner_id",
+            "ticket_count",
+            "tasks_to_do_count",
+            "tasks_high_prio_count",
         ]
         extra_kwargs = {"members": {"write_only": True}}
 
     def get_member_count(self, obj):
         return obj.members.count()
+
+    def get_ticket_count(self, obj):
+        return obj.tickets.count()
+
+    def get_tasks_to_do_count(self, obj):
+        tasks = obj.tickets.filter(status=Task.Status.TODO)
+        return tasks.count()
+
+    def get_tasks_high_prio_count(self, obj):
+        tasks = obj.tickets.filter(priority=Task.Priority.HIGH)
+        return tasks.count()
