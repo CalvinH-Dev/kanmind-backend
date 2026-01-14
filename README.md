@@ -27,6 +27,18 @@ source .venv/bin/activate     # macOS / Linux
 .venv\Scripts\activate         # Windows
 ```
 
+### 🔐 Environment Configuration
+
+Create your environment file from the template:
+```bash
+cp .env.template .env
+```
+
+Generate a new Django secret key at [https://djecrety.ir/](https://djecrety.ir/) and add it to your `.env` file:
+```
+SECRET_KEY=your-generated-secret-key-here
+```
+
 ### 🗄️ Database Setup
 
 The database is not included in this repository. You need to create it from scratch:
@@ -83,6 +95,18 @@ source .venv/bin/activate     # macOS / Linux
 pip install -r requirements.txt
 ```
 
+### 🔐 Environment Configuration
+
+Create your environment file from the template:
+```bash
+cp .env.template .env
+```
+
+Generate a new Django secret key at [https://djecrety.ir/](https://djecrety.ir/) and add it to your `.env` file:
+```
+SECRET_KEY=your-generated-secret-key-here
+```
+
 ### 🗄️ Database Setup
 
 The database is not included in this repository. You need to create it from scratch:
@@ -101,8 +125,6 @@ python manage.py createsuperuser
 ```
 
 Follow the prompts and enter a username, email, and password.
-
-
 
 ### ▶️ Run the Development Server
 ```bash
@@ -123,6 +145,11 @@ http://127.0.0.1:8000/
 
 ## 📌 Notes
 
+### 🔐 Environment Variables
+- The `.env` file contains sensitive configuration like your `SECRET_KEY`.
+- **Never commit your `.env` file** to version control — it should be in your `.gitignore`.
+- Use the provided `.env.template` as a reference for required variables.
+
 ### 🗄️ Database
 - The database file (`db.sqlite3`) is **not** included in this repository.
 - You must run `python manage.py migrate` after setup to create a fresh database.
@@ -133,7 +160,7 @@ http://127.0.0.1:8000/
 - A frontend application (separate repository) will be created later.
 
 ### 🧹 Git Ignore
-- Make sure your `.venv/` and `db.sqlite3` are not committed to version control — add them to your `.gitignore`.
+- Make sure your `.venv/`, `db.sqlite3`, and `.env` are not committed to version control — add them to your `.gitignore`.
 
 ---
 
@@ -143,6 +170,8 @@ http://127.0.0.1:8000/
 |---------------------|--------------------------------------|
 | Create environment  | `uv sync` OR `python -m venv .venv` |
 | Activate environment| `source .venv/bin/activate`          |
+| **Configure .env**  | `cp .env.template .env`              |
+| **Generate SECRET_KEY** | Visit https://djecrety.ir/       |
 | **Create database** | `python manage.py migrate`           |
 | Create superuser    | `python manage.py createsuperuser`   |
 | Run server          | `python manage.py runserver`         |
