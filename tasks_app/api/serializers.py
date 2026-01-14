@@ -97,6 +97,23 @@ class TaskCreateSerializer(TaskListSerializer):
         return super().create(validated_data)
 
 
+class BoardTaskListSerializer(TaskBaseSerializer):
+    """
+    Serializer used for listing tasks.
+
+    Includes a custom SerializerMethodField to count related comments
+    and also contains the board relationship.
+    """
+
+    comments_count = serializers.SerializerMethodField()
+
+    class Meta(TaskBaseSerializer.Meta):
+        fields = TaskBaseSerializer.Meta.fields + ["comments_count"]
+
+    def get_comments_count(self, obj):
+        return obj.comments.count()
+
+
 class CommentDetailSerializer(serializers.ModelSerializer):
     """
     Serializer for comment details.
@@ -122,6 +139,12 @@ class CommentListAndCreateSerializer(CommentDetailSerializer):
 
     class Meta(CommentDetailSerializer.Meta):
         fields = CommentDetailSerializer.Meta.fields + []
+        extra_kwargs = {
+            "content": {
+                "required": True,
+                "allow_blank": False,
+            },
+        }
 
     def create(self, validated_data):
         validated_data["author"] = UserProfile.objects.all().get(
